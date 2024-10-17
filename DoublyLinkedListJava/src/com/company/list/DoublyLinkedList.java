@@ -5,12 +5,6 @@ import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 public class DoublyLinkedList<T extends Object> {
-    void addHeadNode(ListNode<T> node, ListNode<T> head) {
-        node.next = this.head;
-        this.head.previous = node;
-        this.head = node;
-    }
-
     private class ListNode<E extends T> {
         private E item;
         private ListNode<E> next;
@@ -25,13 +19,51 @@ public class DoublyLinkedList<T extends Object> {
     private ListNode<T> tail;
     private int size;
 
+    private void addHeadNode(ListNode<T> node) {
+        node.next = this.head;
+        this.head.previous = node;
+        this.head = node;
+    }
+
+    private void addTailNode(ListNode<T> node) {
+        node.previous = this.tail;
+        this.tail.next = node;
+        this.tail = node;
+    }
+
+    private void addNode(ListNode<T> newNode, ListNode<T> currNode) {
+        newNode.previous = currNode.previous;
+        newNode.next = currNode;
+        currNode.previous.next = newNode;
+        currNode.previous = newNode;
+    }
+
+    private void removeHeadNode() {
+        this.head = this.head.next;
+        this.head.previous = null;
+    }
+
+    private void removeTailNode() {
+        this.tail = this.tail.previous;
+        this.tail.next = null;
+    }
+
+    private void removeNode(ListNode<T> node) {
+        node.previous.next = node.next;
+        node.next.previous = node.previous;
+
+        node.next = null;
+        node.previous = null;
+    }
+
     public void addFirst(T element) {
         ListNode<T> newHead = new ListNode<>(element);
 
+        // Check if list is empty
         if (this.size == 0) {
             this.head = this.tail = newHead;
         } else if (this.size > 0) {
-            addHeadNode(newHead, this.head);
+            addHeadNode(newHead);
         }
 
         size++;
@@ -40,12 +72,11 @@ public class DoublyLinkedList<T extends Object> {
     public void addLast(T element) {
         ListNode<T> newTail = new ListNode<>(element);
 
+        // Check if list is empty
         if (this.size == 0) {
             this.head = this.tail = newTail;
         } else if (this.size > 0) {
-            newTail.previous = this.tail;
-            this.tail.next = newTail;
-            this.tail = newTail;
+            addTailNode(newTail);
         }
 
         size++;
@@ -58,27 +89,18 @@ public class DoublyLinkedList<T extends Object> {
         // If item is the head, make it the new head
         if (this.head.item == item) {
             ListNode<T> newHead = new ListNode<>(element);
-
-            this.head.previous = newHead;
-            newHead.next = this.head;
-            this.head = newHead;
+            addHeadNode(newHead);
 
             this.size++;
-
             return;
         }
 
         for (int i = 0; i < this.size; i++) {
             if (currNode.item == item) {
                 ListNode<T> newNode = new ListNode<>(element);
-
-                newNode.previous = currNode.previous;
-                newNode.next = currNode;
-                currNode.previous.next = newNode;
-                currNode.previous = newNode;
+                addNode(newNode, currNode);
 
                 this.size++;
-
                 return;
             }
 
@@ -94,24 +116,19 @@ public class DoublyLinkedList<T extends Object> {
 
         ListNode<T> newNode = new ListNode<>(element);
 
+        // Check if index is at head
         if (index == 0) {
-            this.head.previous = newNode;
-            newNode.next = this.head;
-            this.head = newNode;
+            addHeadNode(newNode);
 
             this.size++;
-
             return;
         }
 
+        // Check if index is at tail
         if (index == this.size - 1) {
-            newNode.next = this.tail;
-            newNode.previous = this.tail.previous;
-            this.tail.previous.next = newNode;
-            this.tail.previous = newNode;
+            addNode(newNode, this.tail);
 
             this.size++;
-
             return;
         }
 
@@ -122,10 +139,7 @@ public class DoublyLinkedList<T extends Object> {
                 currNode = currNode.next;
             }
 
-            newNode.next = currNode;
-            newNode.previous = currNode.previous;
-            currNode.previous.next = newNode;
-            currNode.previous = newNode;
+            addNode(newNode, currNode);
         } else {
             ListNode<T> currNode = this.tail;
 
@@ -133,90 +147,73 @@ public class DoublyLinkedList<T extends Object> {
                 currNode = currNode.previous;
             }
 
-            newNode.next = currNode;
-            newNode.previous = currNode.previous;
-            currNode.previous.next = newNode;
-            currNode.previous = newNode;
+            addNode(newNode, currNode);
         }
 
         size++;
     }
 
-    public T removeFirst() {
+    public void removeFirst() {
         if (this.size == 0) {
             throw new NoSuchElementException("List is empty!");
         }
 
         ListNode<T> removedNode = this.head;
-        
+
+        // Check there is only 1 element in the list
         if (this.size == 1) {
             this.head = this.tail = null;
 
             this.size--;
-            return removedNode.item;
+            return;
         }
 
-        this.head = this.head.next;
-        this.head.previous = null;
+        removeHeadNode();
 
         this.size--;
-        return removedNode.item;
     }
 
-    public T removeLast() {
+    public void removeLast() {
         if (this.size == 0) {
             throw new NoSuchElementException("List is empty!");
         }
 
         ListNode<T> removedNode = this.tail;
 
+        // Check if there is only 1 element in the list
         if (this.size == 1) {
             this.head = this.tail = null;
-
-            this.size--;
-            return removedNode.item;
-        }
-
-        this.tail = this.tail.previous;
-        this.tail.next = null;
-
-        this.size--;
-
-        return removedNode.item;
-    }
-
-    public void removeByElement(T element) {
-        ListNode<T> currNode = this.head;
-
-        // Check if head is the remove node
-        if (this.head.item == element) {
-            this.head = currNode.next;
-
-            currNode.next.previous = null;
-            currNode.next = null;
 
             this.size--;
             return;
         }
 
+        removeTailNode();
+
+        this.size--;
+    }
+
+    public void removeByElement(T element) {
+        // Check if head is the remove node
+        if (this.head.item == element) {
+            removeHeadNode();
+
+            this.size--;
+            return;
+        }
+
+        ListNode<T> currNode = this.head;
         for (int i = 0; i <= this.size - 1; i++) {
             // If it gets to last iteration, then its the tail
             if (i == this.size - 1) {
-                this.tail = currNode.previous;
-
-                currNode.previous.next = null;
-                currNode.previous = null;
+                removeTailNode();
 
                 size--;
                 return;
             }
 
             if (currNode.item == element) {
-                currNode.previous.next = currNode.next;
-                currNode.next.previous = currNode.previous;
-
-                currNode.next = null;
-                currNode.previous = null;
+                removeNode(currNode);
 
                 this.size--;
                 return;
@@ -225,7 +222,7 @@ public class DoublyLinkedList<T extends Object> {
             currNode = currNode.next;
         }
 
-        // If code reaches here, then it didnt find such element to remove
+        // If code reaches here, then it didn't find such element to remove
         throw new NoSuchElementException("No such element exists!");
     }
 
@@ -234,29 +231,17 @@ public class DoublyLinkedList<T extends Object> {
 
         // Remove head
         if (index == 0) {
-            ListNode<T> newHead = this.head.next;
-
-            this.head.next.previous = null;
-            this.head.next = null;
-
-            this.head = newHead;
+            removeHeadNode();
 
             this.size--;
-
             return;
         }
 
         // Remove tail
         if (index == this.size - 1) {
-            ListNode<T> newTail = this.tail.previous;
-
-            this.tail.previous.next = null;
-            this.tail.previous = null;
-
-            this.tail = newTail;
+            removeTailNode();
 
             this.size--;
-
             return;
         }
 
@@ -267,10 +252,7 @@ public class DoublyLinkedList<T extends Object> {
                 currNode = currNode.next;
             }
 
-            currNode.previous.next = currNode.next;
-            currNode.next.previous = currNode.previous;
-            currNode.next = null;
-            currNode.previous = null;
+            removeNode(currNode);
         } else {
             ListNode<T> currNode = this.tail;
 
@@ -278,10 +260,7 @@ public class DoublyLinkedList<T extends Object> {
                 currNode = currNode.previous;
             }
 
-            currNode.previous.next = currNode.next;
-            currNode.next.previous = currNode.previous;
-            currNode.next = null;
-            currNode.previous = null;
+            removeNode(currNode);
         }
 
         this.size--;
@@ -292,7 +271,6 @@ public class DoublyLinkedList<T extends Object> {
         checkIndex(index);
 
         // If index is first, return head
-        //TODO: why cast to E when item is E?
         if (index == 0) {
             return this.head.item;
         }

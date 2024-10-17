@@ -13,8 +13,6 @@ public class Main {
         number.addFirst(10);
         number.addFirst(12);
 
-        System.out.println(number.removeFirst());
-        System.out.println(number.removeLast());
         System.out.println(number.get(2));
         number.forEach(e -> System.out.println(e));
 
